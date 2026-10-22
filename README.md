@@ -1,4 +1,4 @@
-# PHP Patch Check - LankaHost Support
+# PHP Patch Check
 
 A single PHP file that checks whether a website is running a PHP version patched against **CVE-2026-109618** and **CVE-2026-109619**. Both are critical (CVSS v4.0 9.2) and allow unauthenticated remote code execution.
 
@@ -22,10 +22,20 @@ It works without root access, so customers on shared hosting can run it themselv
 | **NOT PATCHED** | PHP was built before the fix. Contact your hosting provider |
 | **UNKNOWN** | The build date could not be read, usually because `phpinfo` is disabled. Ask your hosting provider |
 
+### Upgrade recommendation
+
+Below the result, the script adds a recommendation when the site runs an old PHP branch:
+
+- **PHP 8.1 or older:** end of life with no official security updates. It recommends switching to PHP 8.3 or 8.4 through Select PHP Version or MultiPHP Manager, after taking a backup.
+- **PHP 8.2:** security updates end on 31 Dec 2026. It recommends planning a move to 8.3 or 8.4.
+- **PHP 8.3 and later:** no recommendation is shown.
+
 ## Requirements
 
-- PHP 7.4 or later
+- PHP 5.5 or later, so it also runs on old CloudLinux alt-php versions such as 5.6, 7.x and 8.0
 - `phpinfo` not listed in `disable_functions` (needed only for the build-date check)
+
+PHP 7.4, 8.0 and 8.1 are end of life upstream, so they never reach a "fixed" version number. For these, and for every alt-php version, the script judges by build date. For example, a CloudLinux site on alt-php 8.0.30 built on or after 20 Oct 2026 shows **LIKELY PATCHED**.
 
 ## Run it in a browser (no root access needed)
 
@@ -38,15 +48,8 @@ It works without root access, so customers on shared hosting can run it themselv
 
 If the account has several domains on different PHP versions, repeat the check in each domain's folder. The browser check is the most reliable one, because it tests the PHP your website actually uses.
 
-## Run it from cPanel Terminal or SSH
 
-```bash
-php check-php-patch.php
-```
-
-On the command line, the PHP version can differ from the one your website uses. Use the browser check to confirm what the site runs.
-
-## Run it as root on every installed PHP version
+## Run it as root on every installed PHP version (for VPS and Dedicated Server customers only)
 
 Server administrators can check every installed ea-php and alt-php version in one go:
 
@@ -56,7 +59,7 @@ for p in /opt/cpanel/ea-php*/root/usr/bin/php /opt/alt/php[0-9]*/usr/bin/php; do
 done
 ```
 
-For a definitive answer, check the package changelog for the CVE IDs:
+For a definitive answer, check the package changelog for the CVE IDs. For CloudLinux alt-php, use the same check on the alt-php package, for example `rpm -q --changelog alt-php80-common | head -20`. For ea-php:
 
 ```bash
 for v in 74 81 82 83 84 85; do
@@ -85,6 +88,7 @@ Edit the values at the top of the file.
 ## Limitations
 
 - A build date shows when PHP was compiled, not which fixes went in. That is why backported builds show **LIKELY PATCHED**. The `rpm --changelog` check above is the definitive test.
+- The result reflects the PHP files on disk. If PHP was not restarted after the update, running processes may still use the old code. Restart Apache and PHP-FPM after updating.
 - Upload progress being **Off** reduces risk, but it does not replace the update.
 
 ## Author
